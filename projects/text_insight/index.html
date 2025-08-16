@@ -1,0 +1,46 @@
+<!doctype html><html lang='en'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Text Insight</title><link rel='stylesheet' href='../../assets/css/style.css'></head><body>
+<header class='nav'><div class='container'><a class='brand' href='../../index.html'>&larr; Back</a><button id='theme' class='btn'>Theme</button></div></header>
+<section class='container prose'>
+  <h2>Text Insight</h2>
+  <p><strong>What you see:</strong> a bubble word cloud that packs the most frequent words. Below the hood it runs tiny sentiment and reading grade metrics.</p>
+  <p><strong>How to use:</strong> paste text; click Analyze; watch the bubbles arrange; check the counters for quick insight.</p>
+  
+<div class="controls">
+  <textarea id="txt" rows="6" placeholder="Paste text here..."></textarea>
+  <button class="btn" id="analyze">Analyze</button>
+</div>
+<div class="controls">
+  <span class="kpi">Words: <span id="kW">0</span></span>
+  <span class="kpi">Sentiment: <span id="kS">0</span></span>
+  <span class="kpi">Reading grade: <span id="kG">0</span></span>
+</div>
+<canvas id="cloud" width="900" height="520" class="stage"></canvas>
+<p><small class="mono">Sentiment uses a tiny built‑in lexicon (toy). Reading grade = Flesch‑Kincaid estimate.</small></p>
+
+</section>
+<footer><div class='container'>Contact: <a href='mailto:ambrosetheshield6@gmail.com'>ambrosetheshield6@gmail.com</a></div></footer>
+<script>document.getElementById('theme').onclick=()=>document.documentElement.classList.toggle('light');</script>
+
+<script>
+const cv=document.getElementById('cloud'), ctx=cv.getContext('2d');
+const pos=['good','great','excellent','positive','love','win','fast','smart','clean','easy','success','strong','secure'];
+const neg=['bad','poor','terrible','negative','hate','fail','slow','bug','hard','issue','weak','insecure'];
+function tokenize(t){return t.toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(Boolean);}
+function fkGrade(text){ const sents=Math.max(1,(text.match(/[.!?]/g)||[]).length); const words=tokenize(text).length; const syll=words*1.3; return Math.max(0, 0.39*(words/sents)+11.8*(syll/words)-15.59).toFixed(1); }
+function sentiment(tokens){ let s=0; tokens.forEach(w=>{ if(pos.includes(w)) s++; if(neg.includes(w)) s--; }); return s; }
+function packBubbles(freq){ const keys=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]).slice(0,40);
+  const nodes=keys.map(k=>({w:k, r:10+freq[k]*3, x:Math.random()*cv.width, y:Math.random()*cv.height, vx:0, vy:0}));
+  for(let t=0;t<600;t++){ for(let i=0;i<nodes.length;i++){ for(let j=i+1;j<nodes.length;j++){ const dx=nodes[j].x-nodes[i].x, dy=nodes[j].y-nodes[i].y; const d=Math.hypot(dx,dy); const min=nodes[i].r+nodes[j].r+4; if(d<min){ const ux=dx/d||0, uy=dy/d||0; const push=(min-d)*0.5; nodes[j].x+=ux*push; nodes[j].y+=uy*push; nodes[i].x-=ux*push; nodes[i].y-=uy*push; } } nodes[i].x=Math.max(nodes[i].r, Math.min(cv.width-nodes[i].r, nodes[i].x)); nodes[i].y=Math.max(nodes[i].r, Math.min(cv.height-nodes[i].r, nodes[i].y)); } }
+  return nodes;
+}
+function draw(nodes){ ctx.clearRect(0,0,cv.width,cv.height); nodes.forEach(n=>{ ctx.fillStyle='#143466'; ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,6.283); ctx.fill(); ctx.strokeStyle='#6aa8ff'; ctx.stroke(); ctx.fillStyle='#d9e6ff'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText(n.w, n.x, n.y+4); }); }
+document.getElementById('analyze').onclick=()=>{
+  const text=document.getElementById('txt').value.trim(); const tokens=tokenize(text); const freq={}; tokens.forEach(w=>freq[w]=(freq[w]||0)+1);
+  document.getElementById('kW').textContent=tokens.length; document.getElementById('kS').textContent=sentiment(tokens); document.getElementById('kG').textContent=fkGrade(text);
+  const nodes=packBubbles(freq); draw(nodes);
+};
+</script>
+
+</body></html>

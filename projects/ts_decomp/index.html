@@ -1,0 +1,42 @@
+<!doctype html><html lang='en'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Time‑Series Decomposer</title><link rel='stylesheet' href='../../assets/css/style.css'></head><body>
+<header class='nav'><div class='container'><a class='brand' href='../../index.html'>&larr; Back</a><button id='theme' class='btn'>Theme</button></div></header>
+<section class='container prose'>
+  <h2>Time‑Series Decomposer</h2>
+  <p><strong>What you see:</strong> four charts: original series, trend (moving average), seasonal pattern, and residuals. Change season length to see structure.</p>
+  <p><strong>How to use:</strong> adjust the season slider; regenerate to get a fresh series; use the four panels to explain your analysis.</p>
+  
+<div class="controls">
+  <label>Season length <input id="season" type="range" min="4" max="52" value="12"></label>
+  <button class="btn" id="regen">Regenerate</button>
+</div>
+<canvas id="series" width="900" height="260" class="chart"></canvas>
+<canvas id="trend"  width="900" height="160" class="chart" style="margin-top:8px"></canvas>
+<canvas id="seasonal" width="900" height="160" class="chart" style="margin-top:8px"></canvas>
+<canvas id="resid"  width="900" height="160" class="chart" style="margin-top:8px"></canvas>
+
+</section>
+<footer><div class='container'>Contact: <a href='mailto:ambrosetheshield6@gmail.com'>ambrosetheshield6@gmail.com</a></div></footer>
+<script>document.getElementById('theme').onclick=()=>document.documentElement.classList.toggle('light');</script>
+
+<script>
+const S=document.getElementById('series').getContext('2d');
+const T=document.getElementById('trend').getContext('2d');
+const C=document.getElementById('seasonal').getContext('2d');
+const R=document.getElementById('resid').getContext('2d');
+let y=[];
+function gen(){ y=[]; const n=240; for(let t=0;t<n;t++){const trend=0.02*t; const seas=Math.sin(2*Math.PI*t/12)*2 + Math.cos(2*Math.PI*t/6)*0.8; const noise=(Math.random()-0.5)*0.8; y.push(10+trend+seas+noise);} }
+function ma(arr,win){ const out=new Array(arr.length).fill(null); const m=Math.floor(win/2); for(let i=m;i<arr.length-m;i++){let s=0; for(let j=-m;j<=m;j++) s+=arr[i+j]; out[i]=s/(2*m+1);} return out; }
+function detrend(arr, trend){ return arr.map((v,i)=> trend[i]==null? null : v-trend[i]); }
+function seasonality(resid, m){ const s=new Array(m).fill(0), c=new Array(m).fill(0); for(let i=0;i<resid.length;i++){ if(resid[i]==null) continue; const idx=i%m; s[idx]+=resid[i]; c[idx]++; }
+  const avg=s.map((v,i)=> c[i]? v/c[i]:0); const out=new Array(resid.length).fill(0); for(let i=0;i<resid.length;i++) out[i]=avg[i%m]; return out; }
+function line(ctx, arr, color='#6aa8ff', ymin=null, ymax=null){ const w=ctx.canvas.width,h=ctx.canvas.height; ctx.clearRect(0,0,w,h); const pad=40; ctx.strokeStyle='#1a2b55'; ctx.strokeRect(pad,10,w-2*pad,h-20);
+  const xs=(i)=> pad + i/(arr.length-1)*(w-2*pad); if(ymin===null){ymin=Math.min(...arr.filter(v=>v!=null))-1} if(ymax===null){ymax=Math.max(...arr.filter(v=>v!=null))+1}
+  const ys=(v)=> 10 + (1-(v-ymin)/(ymax-ymin))*(h-20); ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2; for(let i=0;i<arr.length;i++){ if(arr[i]==null) continue; const x=xs(i), y=ys(arr[i]); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); }
+function draw(){ const m=+document.getElementById('season').value; const tr=ma(y, m|1); const res=detrend(y,tr); const seas=seasonality(res,m); const res2=res.map((v,i)=> v==null? null : v-seas[i]);
+  line(S,y); line(T,tr,'#ffd26a'); line(C,seas,'#7dffc7'); line(R,res2,'#ff9a7d'); }
+document.getElementById('regen').onclick=()=>{gen(); draw()}; document.getElementById('season').oninput=draw; gen(); draw();
+</script>
+
+</body></html>

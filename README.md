@@ -1,2 +1,13 @@
-# my__projects__
-Interactive portfolio with 6 high-visual demos (HTML/CSS/JS): pathfinding + maze, sorting visualizer, k-means clustering, image processing lab, time-series decomposition, and text insight bubbles. Instant outputs, clear controls, offline-ready perfect for GitHub Pages.
+my__projects_ (ultra)
+
+Live: enable GitHub Pages and open the site.
+
+Includes 6 flagship demos with strong visuals:
+- Algo Studio (A* / Dijkstra + maze)
+- Sort Lab (Quick / Merge / Heap)
+- K-Means Cluster Lab (animated)
+- Image Lab (filters + compare slider)
+- Time-Series Decomposer (trend/season/residual)
+- Text Insight (bubble cloud + sentiment)
+
+Runs fully in the browser. HTML/CSS/JS, no build tools.

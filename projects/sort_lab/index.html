@@ -1,0 +1,48 @@
+<!doctype html><html lang='en'><head>
+<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Sort Lab</title><link rel='stylesheet' href='../../assets/css/style.css'></head><body>
+<header class='nav'><div class='container'><a class='brand' href='../../index.html'>&larr; Back</a><button id='theme' class='btn'>Theme</button></div></header>
+<section class='container prose'>
+  <h2>Sort Lab</h2>
+  <p><strong>What you see:</strong> a bar chart of numbers being sorted. Bars move in real time with highlighted comparisons and a live step counter.</p>
+  <p><strong>How to use:</strong> pick algorithm; set N and speed; click the chart to run; reshuffle to try again.</p>
+  
+<div class="controls">
+  <select id="alg"><option value="quick">Quick</option><option value="merge">Merge</option><option value="heap">Heap</option></select>
+  <label>N <input id="n" type="range" min="20" max="200" value="80"></label>
+  <label>Speed <input id="spd" type="range" min="1" max="10" value="6"></label>
+  <button class="btn" id="reshuffle">Reshuffle</button>
+  <span class="kpi">Steps: <span id="kSteps">0</span></span>
+  <span class="kpi">N: <span id="kN">0</span></span>
+</div>
+<canvas id="bars" width="900" height="420" class="chart"></canvas>
+<p><small class="mono">Complexities — Quick: avg O(N log N), worst O(N²) · Merge: O(N log N) · Heap: O(N log N)</small></p>
+
+</section>
+<footer><div class='container'>Contact: <a href='mailto:ambrosetheshield6@gmail.com'>ambrosetheshield6@gmail.com</a></div></footer>
+<script>document.getElementById('theme').onclick=()=>document.documentElement.classList.toggle('light');</script>
+
+<script>
+const cv=document.getElementById('bars'), ctx=cv.getContext('2d');
+let A=[], steps=0, speed=6;
+function makeArray(n){A = Array.from({length:n}, (_,i)=> i+1); for(let i=A.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [A[i],A[j]]=[A[j],A[i]];} steps=0; document.getElementById('kN').textContent=n;}
+function draw(arr, hiA=-1, hiB=-1){ctx.clearRect(0,0,cv.width,cv.height); const w=cv.width/arr.length; for(let i=0;i<arr.length;i++){const h=(arr[i]/arr.length)*cv.height*0.92; ctx.fillStyle = (i===hiA||i===hiB)? '#ffcf6a':'#6aa8ff'; ctx.fillRect(i*w, cv.height-h, Math.max(1,w-1), h);}}
+function sleep(){return new Promise(r=>setTimeout(r, Math.max(4, 22-(+document.getElementById('spd').value*2))))}
+async function quickSort(l=0,r=A.length-1){ if(l>=r) return; let i=l,j=r,p=A[Math.floor((l+r)/2)]; while(i<=j){while(A[i]<p)i++; while(A[j]>p)j--; if(i<=j){[A[i],A[j]]=[A[j],A[i]]; steps++; document.getElementById('kSteps').textContent=steps; draw(A,i,j); await sleep(); i++; j--;}} await Promise.all([quickSort(l,j), quickSort(i,r)]); }
+async function mergeSort(arr=A){ async function msort(a){ if(a.length<=1) return a; const m=Math.floor(a.length/2); const L=await msort(a.slice(0,m)); const R=await msort(a.slice(m)); const out=[]; let i=0,j=0; while(i<L.length||j<R.length){ if(j>=R.length || (i<L.length && L[i]<=R[j])) out.push(L[i++]); else out.push(R[j++]); steps++; document.getElementById('kSteps').textContent=steps; draw(out.concat(L.slice(i)).concat(R.slice(j)).concat(new Array(a.length-(out.length+L.slice(i).length+R.slice(j).length)).fill(0))); await sleep(); } return out }
+  const sorted = await msort(arr); for(let i=0;i<A.length;i++) A[i]=sorted[i]; }
+async function heapSort(){
+  function heapify(n,i){let largest=i; const l=2*i+1, r=2*i+2; if(l<n && A[l]>A[largest]) largest=l; if(r<n && A[r]>A[largest]) largest=r; if(largest!==i){[A[i],A[largest]]=[A[largest],A[i]]; steps++; draw(A,i,largest); return heapify(n,largest);} }
+  let n=A.length; for(let i=Math.floor(n/2)-1;i>=0;i--){heapify(n,i);}
+  for(let i=n-1;i>0;i--){[A[0],A[i]]=[A[i],A[0]]; steps++; draw(A,0,i); await sleep(); heapify(i,0); await sleep();}
+}
+document.getElementById('reshuffle').onclick=()=>{makeArray(+document.getElementById('n').value); draw(A)};
+document.getElementById('n').oninput=e=>{makeArray(+e.target.value); draw(A)};
+document.getElementById('spd').oninput=e=>{speed=+e.target.value};
+document.getElementById('alg').onchange=()=>{steps=0; document.getElementById('kSteps').textContent=steps;}
+async function run(){const alg=document.getElementById('alg').value; steps=0; document.getElementById('kSteps').textContent=steps; if(alg==='quick') await quickSort(); if(alg==='merge') await mergeSort(); if(alg==='heap') await heapSort();}
+cv.addEventListener('click', run);
+makeArray(+document.getElementById('n').value); draw(A);
+</script>
+
+</body></html>
